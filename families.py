@@ -220,9 +220,10 @@ def create_kml_files(csv_file, output_preferred):
     print("KML files created successfully!")
     
 if __name__ == "__main__":
-    csv_file = "source_data/Redline Athletics Locations.csv"
-    family_locations_kml = "Dynamic Heatmaps/data/redline_athletics_locations.kml"
+    csv_file = "data/D1 Locations.csv"
+    D1_training_locations_kml = "data/D1_Training_locations.kml"
+
 
 
     
-    create_kml_files(csv_file, family_locations_kml)
+    create_kml_files(csv_file, D1_training_locations_kml)

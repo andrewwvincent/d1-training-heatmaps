@@ -6,14 +6,15 @@ let visibleCategories = [];
 
 // Global variables for locations
 let allLocations = null;
-let locations = { preferred: [], other: [], family: [] };
+let locations = { preferred: [], other: [], redline: [], D1: [] };
 let locationMarkers = [];
 
 // Add label toggle state
 let labelToggles = {
     preferred: false,
     other: false,
-    family: false
+    redline: false,
+    D1: false
 };
 
 // Default colors for buckets
@@ -337,15 +338,17 @@ function updateUrlParameters() {
     // Get current state of location filters
     const preferredLocations = document.getElementById('preferred-locations').checked ? '1' : '0';
     const otherLocations = document.getElementById('other-locations').checked ? '1' : '0';
-    const familyLocations = document.getElementById('family-locations').checked ? '1' : '0';
+    const redlineLocations = document.getElementById('redline-locations').checked ? '1' : '0';
+    const D1Locations = document.getElementById('D1-locations').checked ? '1' : '0';
     
     // Only allow labels to be on if their corresponding filter is on
     const preferredLabels = (preferredLocations === '1' && labelToggles.preferred) ? '1' : '0';
     const otherLabels = (otherLocations === '1' && labelToggles.other) ? '1' : '0';
-    const familyLabels = (familyLocations === '1' && labelToggles.family) ? '1' : '0';
+    const redlineLabels = (redlineLocations === '1' && labelToggles.redline) ? '1' : '0';
+    const D1Labels = (D1Locations === '1' && labelToggles.D1) ? '1' : '0';
     
-    const locationString = preferredLocations + otherLocations + familyLocations + 
-                          preferredLabels + otherLabels + familyLabels;
+    const locationString = preferredLocations + otherLocations + redlineLocations + D1Locations +
+                          preferredLabels + otherLabels + redlineLabels + D1Labels;
     
     params.set('locations', locationString);
     
@@ -400,24 +403,29 @@ function applyLocationsFromUrl() {
     // Apply checkbox states
     document.getElementById('preferred-locations').checked = locations[0] === '1';
     document.getElementById('other-locations').checked = locations[1] === '1';
-    document.getElementById('family-locations').checked = locations[2] === '1';
+    document.getElementById('redline-locations').checked = locations[2] === '1';
+    document.getElementById('D1-locations').checked = locations[3] === '1';
     
     // Apply label toggle states
     const preferredLabelsBtn = document.getElementById('preferred-labels-toggle');
     const otherLabelsBtn = document.getElementById('other-labels-toggle');
-    const familyLabelsBtn = document.getElementById('family-labels-toggle');
+    const redlineLabelsBtn = document.getElementById('redline-labels-toggle');
+    const D1LabelsBtn = document.getElementById('D1-labels-toggle');
     
-    labelToggles.preferred = locations[3] === '1';
+    labelToggles.preferred = locations[4] === '1';
     labelToggles.other = locations[4] === '1';
-    labelToggles.family = locations[5] === '1';
+    labelToggles.redline = locations[5] === '1';
+    labelToggles.D1 = locations[6] === '1';
     
     preferredLabelsBtn.textContent = labelToggles.preferred ? 'Labels On' : 'Labels Off';
     otherLabelsBtn.textContent = labelToggles.other ? 'Labels On' : 'Labels Off';
-    familyLabelsBtn.textContent = labelToggles.family ? 'Labels On' : 'Labels Off';
+    redlineLabelsBtn.textContent = labelToggles.redline ? 'Labels On' : 'Labels Off';
+    D1LabelsBtn.textContent = labelToggles.D1 ? 'Labels On' : 'Labels Off';
     
     preferredLabelsBtn.classList.toggle('active', labelToggles.preferred);
     otherLabelsBtn.classList.toggle('active', labelToggles.other);
-    familyLabelsBtn.classList.toggle('active', labelToggles.family);
+    redlineLabelsBtn.classList.toggle('active', labelToggles.redline);
+    D1LabelsBtn.classList.toggle('active', labelToggles.D1);
     
     // Update visibility
     updateMarkerVisibility();
@@ -1090,7 +1098,11 @@ function setupEventListeners() {
         updateMarkerVisibility();
         updateUrlParameters();
     });
-    document.getElementById('family-locations').addEventListener('change', function() {
+    document.getElementById('redline-locations').addEventListener('change', function() {
+        updateMarkerVisibility();
+        updateUrlParameters();
+    });
+    document.getElementById('D1-locations').addEventListener('change', function() {
         updateMarkerVisibility();
         updateUrlParameters();
     });
@@ -1112,10 +1124,18 @@ function setupEventListeners() {
         updateUrlParameters();
     });
 
-    document.getElementById('family-labels-toggle').addEventListener('click', function() {
-        labelToggles.family = !labelToggles.family;
-        this.textContent = labelToggles.family ? 'Labels On' : 'Labels Off';
-        this.classList.toggle('active', labelToggles.family);
+    document.getElementById('redline-labels-toggle').addEventListener('click', function() {
+        labelToggles.redline = !labelToggles.redline;
+        this.textContent = labelToggles.redline ? 'Labels On' : 'Labels Off';
+        this.classList.toggle('active', labelToggles.redline);
+        updateLabelVisibility();
+        updateUrlParameters();
+    });
+
+    document.getElementById('D1-labels-toggle').addEventListener('click', function() {
+        labelToggles.D1 = !labelToggles.D1;
+        this.textContent = labelToggles.D1 ? 'Labels On' : 'Labels Off';
+        this.classList.toggle('active', labelToggles.D1);
         updateLabelVisibility();
         updateUrlParameters();
     });
@@ -1312,7 +1332,8 @@ async function loadLocationPoints() {
         locations = {
             preferred: [],
             other: [],
-            family: []
+            redline: [],
+            D1: []
         };
 
         // Wait for map style to load
@@ -1323,12 +1344,14 @@ async function loadLocationPoints() {
         // Load KML files
         const preferredKml = await fetch('data/preferred_locations.kml').then(res => res.text()).then(text => new DOMParser().parseFromString(text, 'text/xml'));
         const otherKml = await fetch('data/other_locations.kml').then(res => res.text()).then(text => new DOMParser().parseFromString(text, 'text/xml'));
-        const familyKml = await fetch('data/redline_athletics_locations.kml').then(res => res.text()).then(text => new DOMParser().parseFromString(text, 'text/xml'));
+        const redlineKml = await fetch('data/redline_athletics_locations.kml').then(res => res.text()).then(text => new DOMParser().parseFromString(text, 'text/xml'));
+        const D1Kml = await fetch('data/D1_Training_locations.kml').then(res => res.text()).then(text => new DOMParser().parseFromString(text, 'text/xml'));
 
         // Process locations
         processLocations(preferredKml, 'preferred', '#FF0000');
         processLocations(otherKml, 'other', '#0000FF');
-        processLocations(familyKml, 'family', '#00FF00');
+        processLocations(redlineKml, 'redline', '#00FF00');
+        processLocations(D1Kml, 'D1', '#00FF00');
 
         // Apply locations from URL
         applyLocationsFromUrl();
@@ -1445,7 +1468,8 @@ function processLocations(kml, type, color) {
 function updateMarkerVisibility() {
     const preferredVisible = document.getElementById('preferred-locations').checked;
     const otherVisible = document.getElementById('other-locations').checked;
-    const familyVisible = document.getElementById('family-locations').checked;
+    const redlineVisible = document.getElementById('redline-locations').checked;
+    const D1Visible = document.getElementById('D1-locations').checked;
 
     let currentIndex = 0;
     
@@ -1461,9 +1485,15 @@ function updateMarkerVisibility() {
         currentIndex++;
     });
 
-    // Update family markers
-    locations.family.forEach(() => {
-        locationMarkers[currentIndex].getElement().style.display = familyVisible ? 'block' : 'none';
+    // Update redline markers
+    locations.redline.forEach(() => {
+        locationMarkers[currentIndex].getElement().style.display = redlineVisible ? 'block' : 'none';
+        currentIndex++;
+    });
+
+    // Update D1 markers
+    locations.D1.forEach(() => {
+        locationMarkers[currentIndex].getElement().style.display = D1Visible ? 'block' : 'none';
         currentIndex++;
     });
 }
@@ -1474,7 +1504,8 @@ function updateLabelVisibility() {
     // Get marker visibility states
     const preferredVisible = document.getElementById('preferred-locations').checked;
     const otherVisible = document.getElementById('other-locations').checked;
-    const familyVisible = document.getElementById('family-locations').checked;
+    const redlineVisible = document.getElementById('redline-locations').checked;
+    const D1Visible = document.getElementById('D1-locations').checked;
     
     // Update preferred markers
     locations.preferred.forEach(() => {
@@ -1498,13 +1529,24 @@ function updateLabelVisibility() {
         currentIndex++;
     });
 
-    // Update family markers
-    locations.family.forEach(() => {
+    // Update redline markers
+    locations.redline.forEach(() => {
         const markerEl = locationMarkers[currentIndex].getElement();
         const label = markerEl.querySelector('.marker-label');
         if (label) {
             // Only show label if both toggle is on AND marker is visible
-            label.classList.toggle('visible', labelToggles.family && familyVisible);
+            label.classList.toggle('visible', labelToggles.redline && redlineVisible);
+        }
+        currentIndex++;
+    });
+
+    // Update D1 markers
+    locations.D1.forEach(() => {
+        const markerEl = locationMarkers[currentIndex].getElement();
+        const label = markerEl.querySelector('.marker-label');
+        if (label) {
+            // Only show label if both toggle is on AND marker is visible
+            label.classList.toggle('visible', labelToggles.D1 && D1Visible);
         }
         currentIndex++;
     });
